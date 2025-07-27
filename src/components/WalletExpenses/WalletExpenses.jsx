@@ -38,17 +38,18 @@ const WalletExpensesComponent = ({
 
   const addExpense = (e) => {
     e.preventDefault();
-    if (walletBalance < newExpense.price) {
+    const price = parseInt(newExpense.price, 10);
+    if (walletBalance < price) {
       return alert("Couldn't add expense, insufficient wallet balance.");
     }
-    newExpense.id = uuidv4();
+    const expenseWithId = { ...newExpense, id: uuidv4(), price };
 
-    const updatedBalance = walletBalance - newExpense.price;
+    const updatedBalance = walletBalance - price;
     setWalletBalance(updatedBalance);
     localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
-    localStorage.setItem("expenses", JSON.stringify([...expenses, newExpense]));
+    localStorage.setItem("expenses", JSON.stringify([...expenses, expenseWithId]));
 
-    setExpenses((prevExpenses) => [...prevExpenses, newExpense]);
+    setExpenses((prevExpenses) => [...prevExpenses, expenseWithId]);
     setIsExpenseModalOpen(false);
     setNewExpense({
       id: null,
@@ -62,11 +63,10 @@ const WalletExpensesComponent = ({
   const addIncome = (e) => {
     e.preventDefault();
     if (!isNaN(newIncome) && newIncome.trim() !== "") {
-      setWalletBalance((prevBalance) => prevBalance + parseInt(newIncome, 10));
-      localStorage.setItem(
-        "totalBalance",
-        JSON.stringify(walletBalance + parseInt(newIncome, 10))
-      );
+      const incomeAmount = parseInt(newIncome, 10);
+      const updatedBalance = walletBalance + incomeAmount;
+      setWalletBalance(updatedBalance);
+      localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
       setIsIncomeModalOpen(false);
       setNewIncome(""); // Reset form
     }
@@ -76,10 +76,11 @@ const WalletExpensesComponent = ({
     handleExpenseListUpdate(expenses);
   }, [expenses]);
 
-  //By default add totalBalance as 5000
+  // By default add walletBalance as 5000
   useEffect(() => {
-    if (!localStorage.getItem("totalBalance"))
-      localStorage.setItem("totalBalance", JSON.stringify(5000));
+    if (!localStorage.getItem("walletBalance")) {
+      localStorage.setItem("walletBalance", JSON.stringify(5000));
+    }
   }, []);
 
   const modalStyle = {
@@ -94,8 +95,8 @@ const WalletExpensesComponent = ({
       maxWidth: "500px",
       background: "rgba(255, 255, 255, 0.6)",
       borderRadius: "10px",
-      border: "border: 1px solid rgba(255, 255, 255, 0.18)",
-      boxShadow: " 0 8px 12px rgba(0, 0, 0, 0.1)",
+      border: "1px solid rgba(255, 255, 255, 0.18)",
+      boxShadow: "0 8px 12px rgba(0, 0, 0, 0.1)",
       backdropFilter: "blur(10px)",
     },
   };
@@ -105,11 +106,11 @@ const WalletExpensesComponent = ({
       <div className="wallet-income-expense-container">
         <div className="wallet-card-container glassmorphism">
           <h2>
-            Wallet Balance:{" "}
+            Wallet Balance:
             <span className="income-amount"> ₹{walletBalance} </span>
           </h2>
           <button
-            className="glassmorphism"
+            className="glassmorphism z-10 relative"
             onClick={() => setIsIncomeModalOpen(true)}
           >
             + Add Income
@@ -121,7 +122,7 @@ const WalletExpensesComponent = ({
             <span className="expense-amount"> ₹{getTotalExpenses()} </span>
           </h2>
           <button
-            className="glassmorphism"
+            className="glassmorphism z-10 relative"
             onClick={() => setIsExpenseModalOpen(true)}
           >
             + Add Expense
@@ -142,7 +143,7 @@ const WalletExpensesComponent = ({
           <input
             className="glassmorphismButton"
             name="income"
-            placeholder="Income amount"
+            placeholder="Income Amount"
             type="number"
             value={newIncome}
             onChange={(e) => handleInputChange(e, false)}
@@ -177,9 +178,8 @@ const WalletExpensesComponent = ({
             placeholder="Title"
             value={newExpense.title}
             onChange={handleInputChange}
-            requireds
+            required
           />
-
           <input
             name="price"
             placeholder="Price"
@@ -195,8 +195,7 @@ const WalletExpensesComponent = ({
             onChange={handleInputChange}
             required
           >
-            <option value="">Select Category</option>{" "}
-            {/* Default empty option */}
+            <option value="">Select Category</option>
             {categories.map((category, index) => (
               <option key={index} value={category}>
                 {category}
