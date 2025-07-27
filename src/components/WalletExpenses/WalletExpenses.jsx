@@ -4,7 +4,7 @@ import "./WalletExpenses.css";
 import RoundChart from "../RoundChart/RoundChart";
 import { v4 as uuidv4 } from "uuid";
 
-// Ensure the modal is bound to your appElement for accessibility reasons
+// Modal accessibility
 Modal.setAppElement("#root");
 
 const WalletExpensesComponent = ({
@@ -18,6 +18,7 @@ const WalletExpensesComponent = ({
 }) => {
   const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
   const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
+
   const [newExpense, setNewExpense] = useState({
     id: null,
     title: "",
@@ -25,6 +26,7 @@ const WalletExpensesComponent = ({
     category: "",
     date: "",
   });
+
   const [newIncome, setNewIncome] = useState("");
 
   const handleInputChange = (e, isExpense = true) => {
@@ -42,14 +44,23 @@ const WalletExpensesComponent = ({
     if (walletBalance < price) {
       return alert("Couldn't add expense, insufficient wallet balance.");
     }
-    const expenseWithId = { ...newExpense, id: uuidv4(), price };
+
+    const expenseWithId = {
+      ...newExpense,
+      id: uuidv4(),
+      price,
+      type: "expense",
+    };
 
     const updatedBalance = walletBalance - price;
-    setWalletBalance(updatedBalance);
-    localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
-    localStorage.setItem("expenses", JSON.stringify([...expenses, expenseWithId]));
+    const updatedExpenses = [...expenses, expenseWithId];
 
-    setExpenses((prevExpenses) => [...prevExpenses, expenseWithId]);
+    setWalletBalance(updatedBalance);
+    setExpenses(updatedExpenses);
+
+    localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
+    localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+
     setIsExpenseModalOpen(false);
     setNewExpense({
       id: null,
@@ -57,7 +68,7 @@ const WalletExpensesComponent = ({
       price: "",
       category: "",
       date: "",
-    }); // Reset form
+    });
   };
 
   const addIncome = (e) => {
@@ -65,10 +76,26 @@ const WalletExpensesComponent = ({
     if (!isNaN(newIncome) && newIncome.trim() !== "") {
       const incomeAmount = parseInt(newIncome, 10);
       const updatedBalance = walletBalance + incomeAmount;
+
+      const newIncomeEntry = {
+        id: uuidv4(),
+        category: "Income",
+        price: incomeAmount,
+        date: new Date().toISOString().split("T")[0],
+        type: "income",
+        title: "Income",
+      };
+
+      const updatedExpenses = [...expenses, newIncomeEntry];
+
       setWalletBalance(updatedBalance);
+      setExpenses(updatedExpenses);
+
       localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
+      localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
+
       setIsIncomeModalOpen(false);
-      setNewIncome(""); // Reset form
+      setNewIncome("");
     }
   };
 
@@ -76,7 +103,7 @@ const WalletExpensesComponent = ({
     handleExpenseListUpdate(expenses);
   }, [expenses]);
 
-  // By default add walletBalance as 5000
+  // Ensure initial wallet balance is set
   useEffect(() => {
     if (!localStorage.getItem("walletBalance")) {
       localStorage.setItem("walletBalance", JSON.stringify(5000));
@@ -129,9 +156,10 @@ const WalletExpensesComponent = ({
           </button>
         </div>
       </div>
+
       <RoundChart data={expenses} />
 
-      {/* Modal for adding income */}
+      {/* Income Modal */}
       <Modal
         isOpen={isIncomeModalOpen}
         onRequestClose={() => setIsIncomeModalOpen(false)}
@@ -164,7 +192,7 @@ const WalletExpensesComponent = ({
         </form>
       </Modal>
 
-      {/* Modal for adding expenses */}
+      {/* Expense Modal */}
       <Modal
         isOpen={isExpenseModalOpen}
         onRequestClose={() => setIsExpenseModalOpen(false)}
