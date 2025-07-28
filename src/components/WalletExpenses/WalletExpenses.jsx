@@ -1,10 +1,13 @@
-import React, { useEffect, useState } from "react";
+import React, { useState } from "react";
 import "./WalletExpensesComponent.css";
 import TableWithPagination from "../ExpenseTable/ExpenseTable";
 
-const WalletExpensesComponent = () => {
-  const [expenseList, setExpenseList] = useState([]);
-  const [walletBalance, setWalletBalance] = useState(0);
+const WalletExpensesComponent = ({
+  walletBalance,
+  setWalletBalance,
+  expenses,
+  setExpenses,
+}) => {
   const [incomeInput, setIncomeInput] = useState("");
 
   const categories = [
@@ -16,24 +19,6 @@ const WalletExpensesComponent = () => {
     "Others",
   ];
 
-  // Load from localStorage
-  useEffect(() => {
-    const storedExpenses = JSON.parse(localStorage.getItem("expenseList")) || [];
-    const storedBalance = parseInt(localStorage.getItem("walletBalance")) || 0;
-
-    setExpenseList(storedExpenses);
-    setWalletBalance(storedBalance);
-  }, []);
-
-  // Persist to localStorage whenever things change
-  useEffect(() => {
-    localStorage.setItem("expenseList", JSON.stringify(expenseList));
-  }, [expenseList]);
-
-  useEffect(() => {
-    localStorage.setItem("walletBalance", walletBalance.toString());
-  }, [walletBalance]);
-
   const handleAddIncome = () => {
     const incomeAmount = parseInt(incomeInput);
     if (!isNaN(incomeAmount)) {
@@ -43,7 +28,7 @@ const WalletExpensesComponent = () => {
   };
 
   const handleExpenseListUpdate = (newList) => {
-    setExpenseList(newList);
+    setExpenses(newList);
   };
 
   return (
@@ -66,7 +51,7 @@ const WalletExpensesComponent = () => {
 
       <div className="expenses-card">
         <TableWithPagination
-          expenseData={expenseList}
+          expenseData={expenses}
           handleExpenseListUpdate={handleExpenseListUpdate}
           categories={categories}
         />
