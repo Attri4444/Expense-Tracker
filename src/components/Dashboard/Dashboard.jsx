@@ -36,7 +36,13 @@ function Dashboard() {
       <h1 className="dashboard-title">Expense Tracker</h1>
 
       {/* Wallet and Expense Summary */}
-      <WalletExpensesComponent />
+      <WalletExpensesComponent
+  walletBalance={walletBalance}
+  setWalletBalance={setWalletBalance}
+  expenses={expenses}
+  setExpenses={setExpenses}
+/>
+
 
       {/* Expense Table */}
       <div className="dashboard-info-container">
