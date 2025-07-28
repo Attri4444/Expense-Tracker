@@ -1,11 +1,5 @@
-import React, { useState, useEffect } from "react";
-import Modal from "react-modal";
+import React, { useState } from "react";
 import "./WalletExpenses.css";
-import RoundChart from "../RoundChart/RoundChart";
-import { v4 as uuidv4 } from "uuid";
-
-// Modal accessibility
-Modal.setAppElement("#root");
 
 const WalletExpensesComponent = ({
   handleExpenseListUpdate,
@@ -14,244 +8,90 @@ const WalletExpensesComponent = ({
   setExpenses,
   getTotalExpenses,
   walletBalance,
-  setWalletBalance,
+  setWalletBalance
 }) => {
-  const [isExpenseModalOpen, setIsExpenseModalOpen] = useState(false);
-  const [isIncomeModalOpen, setIsIncomeModalOpen] = useState(false);
-
-  const [newExpense, setNewExpense] = useState({
-    id: null,
+  const [formData, setFormData] = useState({
     title: "",
     price: "",
     category: "",
-    date: "",
+    date: ""
   });
 
-  const [newIncome, setNewIncome] = useState("");
-
-  const handleInputChange = (e, isExpense = true) => {
+  const handleChange = (e) => {
     const { name, value } = e.target;
-    if (isExpense) {
-      setNewExpense((prevState) => ({ ...prevState, [name]: value }));
-    } else {
-      setNewIncome(value);
-    }
+    setFormData((prev) => ({ ...prev, [name]: value }));
   };
 
-  const addExpense = (e) => {
-    e.preventDefault();
-    const price = parseInt(newExpense.price, 10);
-    if (walletBalance < price) {
-      return alert("Couldn't add expense, insufficient wallet balance.");
-    }
+  const handleAddExpense = () => {
+    const { title, price, category, date } = formData;
+    const priceValue = parseInt(price);
 
-    const expenseWithId = {
-      ...newExpense,
-      id: uuidv4(),
-      price,
-      type: "expense",
+    if (!title || !price || !category || !date || isNaN(priceValue)) return;
+
+    const newExpense = {
+      id: Date.now(),
+      title,
+      price: priceValue,
+      category,
+      date,
+      type: "expense"
     };
 
-    const updatedBalance = walletBalance - price;
-    const updatedExpenses = [...expenses, expenseWithId];
-
-    setWalletBalance(updatedBalance);
+    const updatedExpenses = [...expenses, newExpense];
     setExpenses(updatedExpenses);
+    handleExpenseListUpdate(updatedExpenses);
 
-    localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
-    localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
-
-    setIsExpenseModalOpen(false);
-    setNewExpense({
-      id: null,
-      title: "",
-      price: "",
-      category: "",
-      date: "",
-    });
-  };
-
-  const addIncome = (e) => {
-    e.preventDefault();
-    if (!isNaN(newIncome) && newIncome.trim() !== "") {
-      const incomeAmount = parseInt(newIncome, 10);
-      const updatedBalance = walletBalance + incomeAmount;
-
-      const newIncomeEntry = {
-        id: uuidv4(),
-        category: "Income",
-        price: incomeAmount,
-        date: new Date().toISOString().split("T")[0],
-        type: "income",
-        title: "Income",
-      };
-
-      const updatedExpenses = [...expenses, newIncomeEntry];
-
-      setWalletBalance(updatedBalance);
-      setExpenses(updatedExpenses);
-
-      localStorage.setItem("walletBalance", JSON.stringify(updatedBalance));
-      localStorage.setItem("expenses", JSON.stringify(updatedExpenses));
-
-      setIsIncomeModalOpen(false);
-      setNewIncome("");
-    }
-  };
-
-  useEffect(() => {
-    handleExpenseListUpdate(expenses);
-  }, [expenses]);
-
-  // Ensure initial wallet balance is set
-  useEffect(() => {
-    if (!localStorage.getItem("walletBalance")) {
-      localStorage.setItem("walletBalance", JSON.stringify(5000));
-    }
-  }, []);
-
-  const modalStyle = {
-    content: {
-      top: "50%",
-      left: "50%",
-      right: "auto",
-      bottom: "auto",
-      marginRight: "-50%",
-      transform: "translate(-50%, -50%)",
-      width: "80%",
-      maxWidth: "500px",
-      background: "rgba(255, 255, 255, 0.6)",
-      borderRadius: "10px",
-      border: "1px solid rgba(255, 255, 255, 0.18)",
-      boxShadow: "0 8px 12px rgba(0, 0, 0, 0.1)",
-      backdropFilter: "blur(10px)",
-    },
+    setWalletBalance((prev) => prev - priceValue);
+    setFormData({ title: "", price: "", category: "", date: "" });
   };
 
   return (
-    <div className="wallet-container glassmorphism">
-      <div className="wallet-income-expense-container">
-        <div className="wallet-card-container glassmorphism">
-          <h2>
-            Wallet Balance:
-            <span className="income-amount"> ₹{walletBalance} </span>
-          </h2>
-          <button
-            className="glassmorphism z-10 relative"
-            onClick={() => setIsIncomeModalOpen(true)}
-          >
-            + Add Income
-          </button>
-        </div>
-        <div className="wallet-card-container glassmorphism">
-          <h2>
-            Expenses:
-            <span className="expense-amount"> ₹{getTotalExpenses()} </span>
-          </h2>
-          <button
-            className="glassmorphism z-10 relative"
-            onClick={() => setIsExpenseModalOpen(true)}
-          >
-            + Add Expense
-          </button>
+    <div className="wallet-container">
+      <div className="wallet-card">
+        <h2>Wallet Balance</h2>
+        <div className="wallet-amount" id="walletBalance">
+          ₹{walletBalance.toLocaleString()}
         </div>
       </div>
 
-      <RoundChart data={expenses} />
-
-      {/* Income Modal */}
-      <Modal
-        isOpen={isIncomeModalOpen}
-        onRequestClose={() => setIsIncomeModalOpen(false)}
-        style={modalStyle}
-        contentLabel="Add New Income"
-      >
-        <h2 className="modal-header">Add New Income</h2>
-        <form className="modal-form-income" onSubmit={addIncome}>
-          <input
-            className="glassmorphismButton"
-            name="income"
-            placeholder="Income Amount"
-            type="number"
-            value={newIncome}
-            onChange={(e) => handleInputChange(e, false)}
-            required
-          />
-          <div>
-            <button className="glassmorphismButton" type="submit">
-              Add Income
-            </button>
-            <button
-              className="glassmorphismButton"
-              type="button"
-              onClick={() => setIsIncomeModalOpen(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
-
-      {/* Expense Modal */}
-      <Modal
-        isOpen={isExpenseModalOpen}
-        onRequestClose={() => setIsExpenseModalOpen(false)}
-        style={modalStyle}
-        contentLabel="Add New Expense"
-      >
-        <h2 className="modal-header">Add New Expense</h2>
-        <form className="modal-form-expense" onSubmit={addExpense}>
-          <input
-            name="title"
-            placeholder="Title"
-            value={newExpense.title}
-            onChange={handleInputChange}
-            required
-          />
-          <input
-            name="price"
-            placeholder="Price"
-            type="number"
-            value={newExpense.price}
-            onChange={handleInputChange}
-            required
-          />
-          <select
-            className="select-option"
-            name="category"
-            value={newExpense.category}
-            onChange={handleInputChange}
-            required
-          >
-            <option value="">Select Category</option>
-            {categories.map((category, index) => (
-              <option key={index} value={category}>
-                {category}
-              </option>
-            ))}
-          </select>
-          <input
-            name="date"
-            placeholder="Date"
-            type="date"
-            value={newExpense.date}
-            onChange={handleInputChange}
-            required
-          />
-          <div>
-            <button className="glassmorphismButton" type="submit">
-              Add Expense
-            </button>
-            <button
-              className="glassmorphismButton"
-              type="button"
-              onClick={() => setIsExpenseModalOpen(false)}
-            >
-              Cancel
-            </button>
-          </div>
-        </form>
-      </Modal>
+      <div className="expense-card">
+        <h2>Add Expense</h2>
+        <input
+          name="title"
+          placeholder="Title"
+          value={formData.title}
+          onChange={handleChange}
+        />
+        <input
+          name="price"
+          placeholder="Price"
+          type="number"
+          value={formData.price}
+          onChange={handleChange}
+        />
+        <select
+          name="category"
+          value={formData.category}
+          onChange={handleChange}
+        >
+          <option value="">Select Category</option>
+          {categories.map((cat, idx) => (
+            <option key={idx} value={cat}>
+              {cat}
+            </option>
+          ))}
+        </select>
+        <input
+          name="date"
+          placeholder="Date"
+          type="date"
+          value={formData.date}
+          onChange={handleChange}
+        />
+        <button id="addExpenseBtn" onClick={handleAddExpense}>
+          Add Expense
+        </button>
+      </div>
     </div>
   );
 };
